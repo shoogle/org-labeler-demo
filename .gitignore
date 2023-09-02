@@ -1,0 +1,6 @@
+# .gitignore - Tell Git which files it should avoid tracking.
+
+.DS_Store
+.*,
+*~
+*.autosave
