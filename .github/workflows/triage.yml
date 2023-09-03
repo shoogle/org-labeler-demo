@@ -1,0 +1,24 @@
+name: Triage
+
+on:
+    issues:
+        types:
+        -   opened
+    pull_request:
+        types:
+        -   opened
+
+permissions:
+    issues: write
+    pull-requests: write
+
+jobs:
+    org_label:
+        if: github.event.action == 'opened'
+        runs-on: ubuntu-latest
+        steps:
+        -   name: 'Label as team or community'
+            uses: shoogle/github_actions/org-labeler@main
+            with:
+                github-token: ${{ secrets.DROIDEUS_TRIAGE_PAT }}
+                configuration-path: '.github/issue_assign_by_label_config.yml'
