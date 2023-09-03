@@ -13,12 +13,44 @@ permissions:
     pull-requests: write
 
 jobs:
-    org_label:
-        if: github.event.action == 'opened'
+    org_label_action:
+        if: false # github.event.action == 'opened'
         runs-on: ubuntu-latest
         steps:
         -   name: 'Label as team or community'
             uses: shoogle/github_actions/org-labeler@main
             with:
                 github-token: ${{ secrets.DROIDEUS_TRIAGE_PAT }}
-                configuration-path: '.github/issue_assign_by_label_config.yml'
+                organizations: |
+                    musescore
+                    muse-tech
+                    OpenScore
+                member-label: team
+                default-label: community
+
+    org_label_script:
+        runs-on: ubuntu-latest
+        steps:
+        -   id: check_membership
+            uses: actions/github-script@v6
+            with:
+                github-token: ${{ secrets.DROIDEUS_TRIAGE_PAT }}
+                script: |
+                    console.log(context.payload.sender);
+                    return (await github.rest.orgs.checkMembershipForUser({
+                        org: 'OpenScore',
+                        username: context.payload.sender.login,
+                    })).status === 204;
+        -   id: apply_label
+            uses: actions/github-script@v6
+            with:
+                script: |
+                    console.log(${{steps.check_membership.outputs.result}});
+                    console.log(context.payload.sender);
+                    console.log(context.payload);
+                    await github.rest.issues.addLabels({
+                        issue_number: context.issue.number,
+                        owner: context.repo.owner,
+                        repo: context.repo.repo,
+                        labels: [${{steps.check_membership.outputs.result}} ? 'team' : 'community']
+                    });
